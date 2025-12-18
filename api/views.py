@@ -78,10 +78,10 @@ class SquadStatsApiView(generics.GenericAPIView):
         conteo_diario = {}
         for s in squads:
             fecha = str(s.created_at.date())
-        if fecha in conteo_diario:
-            conteo_diario[fecha] += 1
-        else:
-            conteo_diario[fecha] = 1
+            if fecha in conteo_diario:
+                conteo_diario[fecha] += 1
+            else:
+                conteo_diario[fecha] = 1
 
         daily_data = []
         for fecha, cuenta in conteo_diario.items():
