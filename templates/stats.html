@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas - SquadFinder{% endblock %}
+
+{% block contenido %}
+<div class="row">
+    <div class="col-12 text-center mb-4">
+        <h1 class="display-5">Métricas de la Comunidad</h1>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card text-white bg-primary shadow">
+            <div class="card-body text-center">
+                <h4 class="card-title">Total de Squads</h4>
+                <h1 id="total-squads" class="display-1 fw-bold">0</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8 mb-4">
+        <div class="card shadow">
+            <div class="card-body">
+                <h4 class="card-title text-center mb-3">Nuevos Squads por Día</h4>
+                <canvas id="chartDiario"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    async function cargarEstadisticas() {
+        try {
+            // Consumimos el endpoint nuevo que agregamos a urls.py
+            const res = await fetch('/api/stats/');
+            
+            if (res.ok) {
+                const data = await res.json();
+                
+                // 1. Mostrar el número total
+                document.getElementById('total-squads').innerText = data.total_squads;
+
+                // 2. Dibujar el gráfico
+                const ctx = document.getElementById('chartDiario').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar', // Tipo de gráfico: Barras
+                    data: {
+                        labels: data.daily_stats.map(d => d.date), // Fechas abajo
+                        datasets: [{
+                            label: 'Publicaciones',
+                            data: data.daily_stats.map(d => d.count), // Cantidades
+                            backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 } // Para que no muestre decimales (1.5 squads)
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Error cargando estadísticas:", error);
+        }
+    }
+
+    // Cargar todo al iniciar
+    document.addEventListener('DOMContentLoaded', cargarEstadisticas);
+</script>
+{% endblock contenido %}

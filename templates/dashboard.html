@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Muro de Squads{% endblock %}
+
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Anuncios de la Comunidad</h2>
+    <div class="d-flex gap-2">
+        <select id="filtro-juego" class="form-select" style="width: 200px;">
+            <option value="">Todos los juegos</option>
+        </select>
+        <button onclick="cargarSquads()" class="btn btn-primary">Buscar</button>
+        <a href="/crear-squad" class="btn btn-success">Publicar Squad</a>
+    </div>
+</div>
+
+<div id="squads-container" class="row"></div>
+
+<script>
+    async function cargarFiltros() {
+        const res = await fetch('/api/games/');
+        if (res.ok) {
+            const juegos = await res.json();
+            const select = document.getElementById('filtro-juego');
+            juegos.forEach(j => {
+                select.innerHTML += `<option value="${j.slug}">${j.nombre}</option>`;
+            });
+        }
+    }
+
+    async function cargarSquads() {
+        const token = localStorage.getItem('access_token');
+        const currentUserId = localStorage.getItem('user_id'); // ID del usuario logueado
+        const gameSlug = document.getElementById('filtro-juego').value;
+        
+        if (!token) { window.location.href = "/login"; return; }
+
+        let url = '/api/squads/';
+        if (gameSlug) url += `?game_slug=${gameSlug}`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const squads = await response.json();
+            const container = document.getElementById('squads-container');
+            container.innerHTML = ''; 
+
+            squads.forEach(s => {
+                // Lógica: Solo mostrar botón si el usuario actual es el creador
+                const btnEliminar = (currentUserId == s.creator_id) 
+                    ? `<button onclick="eliminarSquad(${s.id})" class="btn btn-sm btn-outline-danger float-end">Eliminar</button>`
+                    : '';
+
+                container.innerHTML += `
+                    <div class="col-md-4 mb-4" id="squad-${s.id}">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary">${s.game_nombre}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">@${s.creador_gamertag}</h6>
+                                <p class="card-text">${s.descripcion}</p>
+                                <div class="mt-auto">
+                                    <span class="badge bg-info text-dark">${s.rank_required}</span>
+                                    ${btnEliminar}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+    }
+
+    async function eliminarSquad(id) {
+        if (!confirm("¿Eliminar este anuncio?")) return;
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`/api/squads/${id}/`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            document.getElementById(`squad-${id}`).remove();
+        } else if (response.status === 403) {
+            alert("No tienes permiso para borrar este anuncio.");
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarFiltros();
+        cargarSquads();
+    });
+</script>
+{% endblock contenido %}

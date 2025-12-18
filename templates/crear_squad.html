@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Publicar Squad{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <h3>Nueva Búsqueda de Equipo</h3>
+                <form id="form-squad">
+                    <div class="mb-3">
+                        <label class="form-label">Juego</label>
+                        <select id="game" class="form-select" required>
+                            <option value="">Seleccione un juego...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rango Requerido</label>
+                        <input type="text" id="rank" class="form-control" placeholder="Ej: Oro, Platino" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="mic">
+                            <label class="form-check-label">Micrófono Obligatorio</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción (mín. 10 caracteres)</label>
+                        <textarea id="desc" class="form-control" rows="3" minlength="10" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Publicar Anuncio</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Cargar la lista de juegos usando ruta relativa para evitar errores de CORS
+    async function cargarJuegos() {
+        try {
+            const res = await fetch('/api/games/');
+            if (res.ok) {
+                const juegos = await res.json();
+                const select = document.getElementById('game');
+                juegos.forEach(j => {
+                    select.innerHTML += `<option value="${j.id}">${j.nombre}</option>`;
+                });
+            }
+        } catch (error) {
+            console.error("Error al cargar juegos:", error);
+        }
+    }
+
+    document.getElementById('form-squad').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem('access_token');
+        
+        const payload = {
+            game: document.getElementById('game').value,
+            rank_required: document.getElementById('rank').value,
+            mic_required: document.getElementById('mic').checked,
+            descripcion: document.getElementById('desc').value // Usa 'descripcion' como tu modelo
+        };
+
+        const response = await fetch('/api/squads/', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            window.location.href = "/";
+        } else {
+            alert("Error al publicar. Asegúrese de estar logueado.");
+        }
+    });
+
+    // Llamar a la función al cargar la página
+    cargarJuegos();
+</script>
+{% endblock contenido %}

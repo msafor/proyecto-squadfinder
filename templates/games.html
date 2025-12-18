@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Juegos Disponibles - SquadFinder{% endblock %}
+
+{% block contenido %}
+<div class="row text-center mb-5">
+    <div class="col-12">
+        <h1>Juegos Disponibles</h1>
+        <p class="text-muted">Lista de Juegos Disponibles</p>
+    </div>
+</div>
+
+<div id="games-container" class="row justify-content-center">
+    <div class="col-12 text-center">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+</div>
+
+<script>
+    async function cargarJuegosPublicos() {
+        try {
+            // Requisito 2.2.B: GET /api/games/ (Público)
+            // Nota: NO enviamos Header Authorization aquí.
+            const response = await fetch('/api/games/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const juegos = await response.json();
+                const container = document.getElementById('games-container');
+                container.innerHTML = ''; // Limpiar spinner
+
+                if (juegos.length === 0) {
+                    container.innerHTML = '<p>No hay juegos registrados.</p>';
+                    return;
+                }
+
+                juegos.forEach(j => {
+                    // Usamos una imagen por defecto si no tienen cover_image
+                    const img = j.cover_image || 'https://via.placeholder.com/300x200?text=No+Image';
+                    
+                    container.innerHTML += `
+                        <div class="col-md-3 mb-4">
+                            <div class="card h-100 shadow-sm hover-effect">
+                                <img src="${img}" class="card-img-top" alt="${j.nombre}" style="height: 150px; object-fit: cover;">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">${j.nombre}</h5>
+                                    <span class="badge bg-secondary">${j.slug}</span>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                document.getElementById('games-container').innerHTML = 
+                    '<div class="alert alert-danger">Error al cargar juegos (API Protegida por error?)</div>';
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById('games-container').innerHTML = '<p class="text-danger">Error de conexión.</p>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', cargarJuegosPublicos);
+</script>
+{% endblock contenido %}
